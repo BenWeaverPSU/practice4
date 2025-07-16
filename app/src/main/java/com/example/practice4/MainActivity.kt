@@ -11,11 +11,6 @@ import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 
-/**
- * MainActivity
- * - Hosts the Navigation Drawer and loads Fragments based on selection.
- * - Displays user's name passed from LoginActivity.
- */
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var drawerLayout: DrawerLayout
@@ -28,11 +23,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         auth = FirebaseAuth.getInstance()
 
-        // Initialize DrawerLayout & NavigationView
         drawerLayout = findViewById(R.id.drawer_layout)
         navigationView = findViewById(R.id.nav_view)
 
-        // Setup ActionBar toggle button
         val toggle = ActionBarDrawerToggle(
             this, drawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
@@ -40,28 +33,41 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         toggle.syncState()
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        // Set navigation item listener
         navigationView.setNavigationItemSelectedListener(this)
 
-        // Get user name from intent & set in header
         val userName = intent.getStringExtra("USER_NAME") ?: "User"
         val headerView = navigationView.getHeaderView(0)
         val userNameTextView = headerView.findViewById<TextView>(R.id.textViewUserName)
         userNameTextView.text = userName
 
-        // Load default fragment
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, HomeFragment())
                 .commit()
+            navigationView.setCheckedItem(R.id.nav_home)
         }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val toggle = ActionBarDrawerToggle(
+            this, drawerLayout, R.string.navigation_drawer_open, R.string.navigation_drawer_close
+        )
+        if (toggle.onOptionsItemSelected(item)) {
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.nav_home -> {
+            R.id.nav_items -> {
                 supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragment_container, HomeFragment())
+                    .replace(R.id.fragment_container, ItemListFragment())
+                    .commit()
+            }
+            R.id.nav_account -> {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, AccountFragment())
                     .commit()
             }
             R.id.nav_logout -> {
@@ -69,11 +75,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 startActivity(Intent(this, LoginActivity::class.java))
                 finish()
             }
-            // add more menu items here if needed
+            else -> {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.fragment_container, HomeFragment())
+                    .commit()
+            }
         }
 
         drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
 
+    override fun onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
+    }
 }

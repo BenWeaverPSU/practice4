@@ -1,27 +1,23 @@
 package com.example.practice4
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.*
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
-/**
- * ItemListFragment
- * - Displays a RecyclerView of items from Firebase Realtime Database.
- * - Allows deleting an item by clicking on it.
- */
 class ItemListFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ItemAdapter
+    private val db = FirebaseFirestore.getInstance()
     private val itemList = mutableListOf<Item>()
-
-    private lateinit var databaseRef: DatabaseReference
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -29,47 +25,77 @@ class ItemListFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_item_list, container, false)
 
-        recyclerView = view.findViewById(R.id.recyclerViewItems)
+        recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = ItemAdapter(itemList) { item ->
-            deleteItem(item)
-        }
+        adapter = ItemAdapter(itemList) { item -> deleteItem(item) }
         recyclerView.adapter = adapter
 
-        // Initialize Firebase database reference
-        databaseRef = FirebaseDatabase.getInstance().getReference("items")
+        view.findViewById<FloatingActionButton>(R.id.fab_add_item).setOnClickListener {
+            showAddItemDialog()
+        }
 
         loadItems()
 
         return view
     }
 
-    // Read items from Firebase
     private fun loadItems() {
-        databaseRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        db.collection("users").document(userId).collection("items")
+            .get()
+            .addOnSuccessListener { result ->
                 itemList.clear()
-                for (data in snapshot.children) {
-                    val item = data.getValue(Item::class.java)
-                    item?.let { itemList.add(it) }
+                for (document in result) {
+                    val item = document.toObject(Item::class.java)
+                    item.id = document.id
+                    itemList.add(item)
                 }
                 adapter.notifyDataSetChanged()
             }
-
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(requireContext(), "Failed to load items", Toast.LENGTH_SHORT).show()
-            }
-        })
     }
 
-    // Delete an item
-    private fun deleteItem(item: Item) {
-        databaseRef.child(item.id).removeValue()
+    private fun showAddItemDialog() {
+        val editText = EditText(requireContext())
+        AlertDialog.Builder(requireContext())
+            .setTitle("Add Item")
+            .setView(editText)
+            .setPositiveButton("Add") { _, _ ->
+                val name = editText.text.toString()
+                if (name.isNotEmpty()) {
+                    addItem(name)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun addItem(name: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val newItem = hashMapOf("name" to name)
+
+        db.collection("users").document(userId).collection("items")
+            .add(newItem)
             .addOnSuccessListener {
-                Toast.makeText(requireContext(), "Item deleted", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Item added", Toast.LENGTH_SHORT).show()
+                loadItems()
             }
             .addOnFailureListener {
-                Toast.makeText(requireContext(), "Failed to delete", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Failed to add item", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun deleteItem(item: Item) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        db.collection("users").document(userId).collection("items")
+            .document(item.id)
+            .delete()
+            .addOnSuccessListener {
+                Toast.makeText(requireContext(), "Item deleted", Toast.LENGTH_SHORT).show()
+                loadItems()
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Failed to delete item", Toast.LENGTH_SHORT).show()
             }
     }
 }
