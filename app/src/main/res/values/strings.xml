@@ -4,4 +4,7 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="home">Home</string>
     <string name="logout">Logout</string>
+    <string name="delete">Delete</string>
+    <string name="delete_confirm">Delete this item?</string>
+    <string name="cancel">Cancel</string>
 </resources>

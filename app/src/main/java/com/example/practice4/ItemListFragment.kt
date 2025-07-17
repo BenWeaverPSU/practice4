@@ -16,7 +16,8 @@ class ItemListFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ItemAdapter
-    private val db = FirebaseFirestore.getInstance()
+    private lateinit var db: FirebaseFirestore
+
     private val itemList = mutableListOf<Item>()
 
     override fun onCreateView(
@@ -27,7 +28,20 @@ class ItemListFragment : Fragment() {
 
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        adapter = ItemAdapter(itemList) { item -> deleteItem(item) }
+
+        db = FirebaseFirestore.getInstance()
+
+        adapter = ItemAdapter(
+            itemList,
+            onItemClick = { item ->
+                // Optional: handle regular click
+                Toast.makeText(requireContext(), "Clicked: ${item.name}", Toast.LENGTH_SHORT).show()
+            },
+            onDelete = { item ->
+                deleteItem(item)
+            }
+        )
+
         recyclerView.adapter = adapter
 
         view.findViewById<FloatingActionButton>(R.id.fab_add_item).setOnClickListener {
@@ -41,13 +55,18 @@ class ItemListFragment : Fragment() {
 
     private fun loadItems() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
         db.collection("users").document(userId).collection("items")
-            .get()
-            .addOnSuccessListener { result ->
+            .addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    Toast.makeText(requireContext(), "Listen failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    return@addSnapshotListener
+                }
+
                 itemList.clear()
-                for (document in result) {
-                    val item = document.toObject(Item::class.java)
-                    item.id = document.id
+                for (doc in snapshots!!) {
+                    val item = doc.toObject(Item::class.java)
+                    item.id = doc.id
                     itemList.add(item)
                 }
                 adapter.notifyDataSetChanged()
@@ -71,18 +90,21 @@ class ItemListFragment : Fragment() {
 
     private fun addItem(name: String) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val newItem = hashMapOf("name" to name)
+        val newItem = hashMapOf(
+            "name" to name,
+            "timestamp" to System.currentTimeMillis()
+        )
 
         db.collection("users").document(userId).collection("items")
             .add(newItem)
             .addOnSuccessListener {
                 Toast.makeText(requireContext(), "Item added", Toast.LENGTH_SHORT).show()
-                loadItems()
             }
             .addOnFailureListener {
                 Toast.makeText(requireContext(), "Failed to add item", Toast.LENGTH_SHORT).show()
             }
     }
+
 
     private fun deleteItem(item: Item) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -92,10 +114,10 @@ class ItemListFragment : Fragment() {
             .delete()
             .addOnSuccessListener {
                 Toast.makeText(requireContext(), "Item deleted", Toast.LENGTH_SHORT).show()
-                loadItems()
             }
             .addOnFailureListener {
                 Toast.makeText(requireContext(), "Failed to delete item", Toast.LENGTH_SHORT).show()
             }
     }
+
 }

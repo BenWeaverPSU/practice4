@@ -4,14 +4,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 
-/**
- * RecyclerView Adapter for displaying a list of Items.
- */
 class ItemAdapter(
-    private val items: List<Item>,
-    private val onItemClick: (Item) -> Unit
+    private val items: MutableList<Item>,
+    private val onItemClick: (Item) -> Unit,
+    private val onDelete: (Item) -> Unit
 ) : RecyclerView.Adapter<ItemAdapter.ItemViewHolder>() {
 
     inner class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -27,11 +27,32 @@ class ItemAdapter(
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val item = items[position]
+        val context = holder.itemView.context
+
         holder.nameTextView.text = item.name
         holder.descriptionTextView.text = item.description
 
         holder.itemView.setOnClickListener {
             onItemClick(item)
+        }
+
+        holder.itemView.setOnLongClickListener {
+            holder.itemView.setBackgroundColor(
+                ContextCompat.getColor(context, R.color.selectedItem)
+            )
+
+            AlertDialog.Builder(context)
+                .setTitle(R.string.delete_confirm)
+                .setMessage(item.name)
+                .setPositiveButton(R.string.delete) { _, _ ->
+                    onDelete(item)
+                }
+                .setNegativeButton(R.string.cancel) { _, _ ->
+                    holder.itemView.setBackgroundColor(0) // reset
+                }
+                .show()
+
+            true
         }
     }
 
