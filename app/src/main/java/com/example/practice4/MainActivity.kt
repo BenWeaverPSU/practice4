@@ -8,6 +8,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import android.view.View
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 
@@ -38,7 +39,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val userName = intent.getStringExtra("USER_NAME") ?: "User"
         val headerView = navigationView.getHeaderView(0)
         val userNameTextView = headerView.findViewById<TextView>(R.id.textViewUserName)
-        userNameTextView.text = userName
+        userNameTextView.text = "Hello $userName"
 
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
@@ -93,4 +94,5 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             super.onBackPressed()
         }
     }
+
 }

@@ -1,15 +1,19 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/nav_header_root"
     android:orientation="vertical"
+    android:gravity="bottom"
     android:layout_width="match_parent"
-    android:layout_height="124dp"
+    android:layout_height="180dp"
     android:fitsSystemWindows="true"
-    android:background="@color/purple_500">
+    android:background="@color/purple_500"
+    android:padding="16dp">
 
     <TextView
         android:id="@+id/textViewUserName"
-        android:text="User Name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="displayed text will be the user's email"
         android:textColor="@android:color/white"
         android:textSize="18sp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:textStyle="bold" />
 </LinearLayout>
