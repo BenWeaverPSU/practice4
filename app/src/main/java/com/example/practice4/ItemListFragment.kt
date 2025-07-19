@@ -12,47 +12,61 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
+
+// ItemListFragment
+// Displays a real-time list of items from Firestore.
+// Allows adding new items and deleting existing ones.
+
 class ItemListFragment : Fragment() {
 
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var adapter: ItemAdapter
-    private lateinit var db: FirebaseFirestore
+    private lateinit var recyclerView: RecyclerView   // RecyclerView to show items
+    private lateinit var adapter: ItemAdapter         // Adapter for RecyclerView
+    private lateinit var db: FirebaseFirestore        // Firestore instance
 
-    private val itemList = mutableListOf<Item>()
+    private val itemList = mutableListOf<Item>()      // List of items to display
 
+    // Creates and returns the view hierarchy for the fragment.
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, // Inflater to inflate XML
+        container: ViewGroup?,    // Parent view
+        savedInstanceState: Bundle? // Saved state
     ): View? {
         val view = inflater.inflate(R.layout.fragment_item_list, container, false)
 
+        // Initialize RecyclerView with LinearLayoutManager
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
+        // Initialize Firestore
         db = FirebaseFirestore.getInstance()
 
+        // Set up adapter with click and delete handlers
         adapter = ItemAdapter(
             itemList,
             onItemClick = { item ->
-                // Optional: handle regular click
+                // Handle regular click
                 Toast.makeText(requireContext(), "Clicked: ${item.name}", Toast.LENGTH_SHORT).show()
             },
             onDelete = { item ->
+                // Delete item from database
                 deleteItem(item)
             }
         )
 
         recyclerView.adapter = adapter
 
+        // Set up FloatingActionButton to add new items
         view.findViewById<FloatingActionButton>(R.id.fab_add_item).setOnClickListener {
             showAddItemDialog()
         }
 
+        // Load and listen to real-time updates from Firestore
         loadItems()
 
         return view
     }
 
+    // Loads items from Firestore and listens for real-time updates.
     private fun loadItems() {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
@@ -63,6 +77,7 @@ class ItemListFragment : Fragment() {
                     return@addSnapshotListener
                 }
 
+                // Clear the list and repopulate with current data
                 itemList.clear()
                 for (doc in snapshots!!) {
                     val item = doc.toObject(Item::class.java)
@@ -73,6 +88,7 @@ class ItemListFragment : Fragment() {
             }
     }
 
+    // Displays a dialog to enter the name of a new item.
     private fun showAddItemDialog() {
         val editText = EditText(requireContext())
         AlertDialog.Builder(requireContext())
@@ -88,6 +104,7 @@ class ItemListFragment : Fragment() {
             .show()
     }
 
+    // Adds a new item with the given name to Firestore.
     private fun addItem(name: String) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val newItem = hashMapOf(
@@ -106,6 +123,7 @@ class ItemListFragment : Fragment() {
     }
 
 
+    // Deletes the given item from Firestore.
     private fun deleteItem(item: Item) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 

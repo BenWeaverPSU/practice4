@@ -8,11 +8,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 
-/**
- * SignUpActivity
- * - Lets users register a new account using Firebase Authentication.
- * - After successful signup, redirects back to LoginActivity.
- */
+// SignUpActivity
+// Lets users register a new account using Firebase Authentication.
+// After successful signup, redirects back to LoginActivity.
+
 class SignUpActivity : AppCompatActivity() {
 
     // Firebase Authentication instance
